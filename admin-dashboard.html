@@ -412,11 +412,16 @@
     return true;
 
   }
+  let livreActuelId = null;
+
+
 // =================================================
 // GÉRER LES PERSONNAGES
 // =================================================
 
 async function gererPersonnages(livreId) {
+
+  livreActuelId = livreId;
 
   const { data: personnages, error } =
     await supabaseClient
@@ -431,27 +436,64 @@ async function gererPersonnages(livreId) {
     return;
   }
 
-  let texte =
-    "GESTION DES PERSONNAGES\n\n";
+  const liste =
+    document.getElementById("listePersonnages");
 
-  if (personnages.length === 0) {
-    texte += "Aucun personnage pour le moment.\n\n";
+  liste.innerHTML = "";
+
+  if (!personnages || personnages.length === 0) {
+
+    liste.innerHTML =
+      "<p>Aucun personnage pour le moment.</p>";
+
   } else {
 
-    personnages.forEach((personnage, index) => {
+    personnages.forEach(personnage => {
 
-      texte +=
-        `${index + 1}. ${personnage.nom}\n` +
-        `${personnage.description || "Aucune description"}\n\n`;
+      const bloc =
+        document.createElement("div");
+
+      bloc.style.marginBottom = "15px";
+      bloc.style.paddingBottom = "15px";
+      bloc.style.borderBottom =
+        "1px solid #eee7df";
+
+      bloc.innerHTML = `
+        <strong>${personnage.nom}</strong>
+        <p>${personnage.description || ""}</p>
+      `;
+
+      liste.appendChild(bloc);
 
     });
 
   }
 
-  texte +=
-    "Pour l'instant, cette fenêtre permet seulement de consulter les personnages.";
+  document.getElementById(
+    "personnagesModal"
+  ).style.display = "flex";
+}
 
-  alert(texte);
+
+// =================================================
+// FERMER LA FENÊTRE
+// =================================================
+
+function fermerPersonnages() {
+
+  document.getElementById(
+    "personnagesModal"
+  ).style.display = "none";
+
+  document.getElementById(
+    "personnageNom"
+  ).value = "";
+
+  document.getElementById(
+    "personnageDescription"
+  ).value = "";
+
+  livreActuelId = null;
 }
   // =================================================
   // CHARGER LES LIVRES
