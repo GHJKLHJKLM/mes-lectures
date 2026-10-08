@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Administration — Mes lectures</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, serif;
+      background: #f7f3ed;
+      color: #302c28;
+    }
+
+    .login {
+      width: min(420px, calc(100% - 40px));
+      background: white;
+      padding: 40px;
+      border-radius: 14px;
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 32px;
+      font-weight: normal;
+    }
+
+    p {
+      color: #756a60;
+      line-height: 1.6;
+    }
+
+    label {
+      display: block;
+      margin-top: 22px;
+      margin-bottom: 7px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d2c7ba;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: #5d5146;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #463c34;
+    }
+
+    #message {
+      margin-top: 20px;
+      color: #9a3d3d;
+    }
+  </style>
+</head>
+
+
+<body>
+
+  <div class="login">
+
+    <h1>Administration</h1>
+
+    <p>
+      Connecte-toi pour gérer ta bibliothèque.
+    </p>
+
+
+    <form id="loginForm">
+
+      <label for="email">
+        Adresse e-mail
+      </label>
+
+      <input
+        id="email"
+        type="email"
+        required
+        autocomplete="email"
+      >
+
+
+      <label for="password">
+        Mot de passe
+      </label>
+
+      <input
+        id="password"
+        type="password"
+        required
+        autocomplete="current-password"
+      >
+
+
+      <button type="submit">
+        Se connecter
+      </button>
+
+    </form>
+
+
+    <div id="message"></div>
+
+  </div>
+
+
+<script>
+
+  // ================================================
+  // SUPABASE
+  // ================================================
+
+  const SUPABASE_URL =
+    "https://cjecagqgpqhzawspqzjs.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_8hwEc6y0qiL-vCtUGZ-XVA_Z-SSQKc9";
+
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+  // ================================================
+  // CONNEXION
+  // ================================================
+
+  document
+    .getElementById("loginForm")
+    .addEventListener("submit", async function(event) {
+
+      event.preventDefault();
+
+
+      const email =
+        document.getElementById("email").value;
+
+
+      const password =
+        document.getElementById("password").value;
+
+
+      const message =
+        document.getElementById("message");
+
+
+      message.textContent =
+        "Connexion en cours...";
+
+
+      const { data, error } =
+        await supabaseClient.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+
+      if (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "E-mail ou mot de passe incorrect.";
+
+        return;
+      }
+
+
+      message.style.color = "#456b4a";
+
+      message.textContent =
+        "Connexion réussie !";
+
+
+      setTimeout(() => {
+
+        window.location.href =
+          "admin-dashboard.html";
+
+      }, 500);
+
+    });
+
+</script>
+
+</body>
+
+</html>
