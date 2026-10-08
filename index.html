@@ -324,7 +324,7 @@
     const { data, error } = await supabaseClient
       .from("livres")
       .select("*")
-      .order("date_lecture", { ascending: false });
+      .order("date_parution", { ascending: false });
 
 
     if (error) {
@@ -639,8 +639,8 @@
               }
 
               ${
-                livre.date_lecture
-                  ? `<strong>Lecture :</strong> ${formaterDate(livre.date_lecture)}<br>`
+                livre.date_parution
+                  ? `<strong>Lecture :</strong> ${formaterDate(livre.date_parution)}<br>`
                   : ""
               }
 
