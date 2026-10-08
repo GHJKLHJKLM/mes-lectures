@@ -760,7 +760,7 @@ if (fichierCouverture) {
       .storage
       .from("Couvertures")
       .upload(nomFichier, fichierCouverture);
-
+const message = document.getElementById("message");
   if (uploadError) {
     console.error(uploadError);
     message.textContent =
