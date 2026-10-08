@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Administration — Mes lectures</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f3ed;
+      color: #302c28;
+    }
+
+    header {
+      background: #e8dfd2;
+      padding: 25px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-weight: normal;
+    }
+
+    .logout {
+      background: transparent;
+      border: 1px solid #756a60;
+      padding: 9px 15px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    h2 {
+      font-family: Georgia, serif;
+      font-weight: normal;
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 7px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #d2c7ba;
+      border-radius: 7px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    button {
+      padding: 11px 17px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .primary {
+      margin-top: 25px;
+      background: #5d5146;
+      color: white;
+    }
+
+    .primary:hover {
+      background: #463c34;
+    }
+
+    .book-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee7df;
+    }
+
+    .book-row:last-child {
+      border-bottom: none;
+    }
+
+    .book-info strong {
+      display: block;
+      font-family: Georgia, serif;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .book-info span {
+      color: #756a60;
+    }
+
+    .delete {
+      background: #f0dede;
+      color: #8b3f3f;
+    }
+
+    .success {
+      color: #456b4a;
+      margin-top: 15px;
+    }
+
+    .error {
+      color: #9a3d3d;
+      margin-top: 15px;
+    }
+
+    @media (max-width: 650px) {
+
+      header {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .book-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<header>
+
+  <h1>Mes lectures — Administration</h1>
+
+  <button
+    class="logout"
+    id="logout"
+  >
+    Se déconnecter
+  </button>
+
+</header>
+
+
+<main class="container">
+
+
+  <!-- ============================================ -->
+  <!-- AJOUTER UN LIVRE -->
+  <!-- ============================================ -->
+
+  <section class="card">
+
+    <h2>Ajouter un livre</h2>
+
+
+    <form id="bookForm">
+
+      <label for="titre">
+        Titre
+      </label>
+
+      <input
+        id="titre"
+        required
+      >
+
+
+      <label for="auteur">
+        Auteur
+      </label>
+
+      <input
+        id="auteur"
+        required
+      >
+
+
+      <label for="genre">
+        Genre
+      </label>
+
+      <input
+        id="genre"
+        placeholder="Roman, Policier, Essai..."
+      >
+
+
+      <label for="date_lecture">
+        Date de lecture
+      </label>
+
+      <input
+        id="date_lecture"
+        type="date"
+      >
+
+
+      <label for="pages">
+        Nombre de pages
+      </label>
+
+      <input
+        id="pages"
+        type="number"
+        min="1"
+      >
+
+
+      <label for="couverture">
+        URL de la couverture
+      </label>
+
+      <input
+        id="couverture"
+        type="url"
+        placeholder="https://..."
+      >
+
+
+      <label for="resume">
+        Résumé
+      </label>
+
+      <textarea
+        id="resume"
+      ></textarea>
+
+
+      <button
+        class="primary"
+        type="submit"
+      >
+        Ajouter le livre
+      </button>
+
+
+      <div id="message"></div>
+
+    </form>
+
+  </section>
+
+
+  <!-- ============================================ -->
+  <!-- MES LIVRES -->
+  <!-- ============================================ -->
+
+  <section class="card">
+
+    <h2>Mes livres</h2>
+
+    <div id="books">
+      Chargement...
+    </div>
+
+  </section>
+
+
+</main>
+
+
+<script>
+
+  // =================================================
+  // SUPABASE
+  // =================================================
+
+  const SUPABASE_URL =
+    "https://cjecagqgpqhzawspqzjs.supabase.co";
+
+
+  const SUPABASE_KEY =
+    "sb_publishable_8hwEc6y0qiL-vCtUGZ-XVA_Z-SSQKc9";
+
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+  // =================================================
+  // VÉRIFIER LA CONNEXION
+  // =================================================
+
+  async function verifierConnexion() {
+
+    const {
+      data: {
+        session
+      }
+    } = await supabaseClient.auth.getSession();
+
+
+    if (!session) {
+
+      window.location.href =
+        "admin.html";
+
+      return false;
+    }
+
+
+    return true;
+
+  }
+
+
+  // =================================================
+  // CHARGER LES LIVRES
+  // =================================================
+
+  async function chargerLivres() {
+
+    const {
+      data: {
+        user
+      }
+    } = await supabaseClient.auth.getUser();
+
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from("livres")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("date_lecture", {
+        ascending: false
+      });
+
+
+    if (error) {
+
+      console.error(error);
+
+      document.getElementById("books").textContent =
+        "Impossible de charger les livres.";
+
+      return;
+    }
+
+
+    const container =
+      document.getElementById("books");
+
+
+    container.innerHTML = "";
+
+
+    if (!data || data.length === 0) {
+
+      container.innerHTML =
+        "<p>Aucun livre pour le moment.</p>";
+
+      return;
+    }
+
+
+    data.forEach(livre => {
+
+      const row =
+        document.createElement("div");
+
+
+      row.className =
+        "book-row";
+
+
+      row.innerHTML = `
+
+        <div class="book-info">
+
+          <strong>
+            ${livre.titre}
+          </strong>
+
+          <span>
+            ${livre.auteur}
+          </span>
+
+        </div>
+
+        <button
+          class="delete"
+          onclick="supprimerLivre(${livre.id})"
+        >
+          Supprimer
+        </button>
+
+      `;
+
+
+      container.appendChild(row);
+
+    });
+
+  }
+
+
+  // =================================================
+  // AJOUTER UN LIVRE
+  // =================================================
+
+  document
+    .getElementById("bookForm")
+    .addEventListener(
+      "submit",
+      async function(event) {
+
+        event.preventDefault();
+
+
+        const {
+          data: {
+            user
+          }
+        } =
+          await supabaseClient.auth.getUser();
+
+
+        const livre = {
+
+          titre:
+            document.getElementById("titre").value,
+
+          auteur:
+            document.getElementById("auteur").value,
+
+          genre:
+            document.getElementById("genre").value || null,
+
+          date_lecture:
+            document.getElementById("date_lecture").value || null,
+
+          pages:
+            document.getElementById("pages").value
+              ? Number(document.getElementById("pages").value)
+              : null,
+
+          couverture:
+            document.getElementById("couverture").value || null,
+
+          resume:
+            document.getElementById("resume").value || null,
+
+          user_id:
+            user.id
+
+        };
+
+
+        const {
+          error
+        } =
+          await supabaseClient
+            .from("livres")
+            .insert(livre);
+
+
+        const message =
+          document.getElementById("message");
+
+
+        if (error) {
+
+          console.error(error);
+
+          message.className =
+            "error";
+
+          message.textContent =
+            "Impossible d'ajouter le livre.";
+
+          return;
+        }
+
+
+        message.className =
+          "success";
+
+        message.textContent =
+          "Livre ajouté !";
+
+
+        document
+          .getElementById("bookForm")
+          .reset();
+
+
+        chargerLivres();
+
+      });
+
+
+  // =================================================
+  // SUPPRIMER UN LIVRE
+  // =================================================
+
+  async function supprimerLivre(id) {
+
+    const confirmation =
+      confirm(
+        "Voulez-vous vraiment supprimer ce livre ?"
+      );
+
+
+    if (!confirmation) {
+      return;
+    }
+
+
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("livres")
+        .delete()
+        .eq("id", id);
+
+
+    if (error) {
+
+      console.error(error);
+
+      alert(
+        "Impossible de supprimer le livre."
+      );
+
+      return;
+    }
+
+
+    chargerLivres();
+
+  }
+
+
+  // =================================================
+  // DÉCONNEXION
+  // =================================================
+
+  document
+    .getElementById("logout")
+    .addEventListener(
+      "click",
+      async function() {
+
+        await supabaseClient.auth.signOut();
+
+        window.location.href =
+          "admin.html";
+
+      }
+    );
+
+
+  // =================================================
+  // DÉMARRAGE
+  // =================================================
+
+  async function demarrer() {
+
+    const connecte =
+      await verifierConnexion();
+
+
+    if (connecte) {
+      chargerLivres();
+    }
+
+  }
+
+
+  demarrer();
+
+</script>
+
+</body>
+
+</html>
