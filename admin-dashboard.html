@@ -461,6 +461,14 @@ async function gererPersonnages(livreId) {
       bloc.innerHTML = `
         <strong>${personnage.nom}</strong>
         <p>${personnage.description || ""}</p>
+
+        <button
+          type="button"
+          class="delete"
+          onclick="supprimerPersonnage(${personnage.id})"
+        >
+          Supprimer
+        </button>
       `;
 
       liste.appendChild(bloc);
