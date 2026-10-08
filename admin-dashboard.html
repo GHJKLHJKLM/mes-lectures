@@ -249,10 +249,10 @@
       </label>
 
       <input
-        id="couverture"
-        type="url"
-        placeholder="https://..."
-      >
+  type="file"
+  id="couverture"
+  accept="image/*"
+>
 
 
       <label for="resume">
@@ -754,6 +754,38 @@ async function supprimerPersonnage(personnageId) {
         } =
           await supabaseClient.auth.getUser();
 
+        const fichierCouverture =
+  document.getElementById("couverture").files[0];
+
+let urlCouverture = null;
+
+if (fichierCouverture) {
+
+  const nomFichier =
+    `${Date.now()}-${fichierCouverture.name}`;
+
+  const { error: uploadError } =
+    await supabaseClient
+      .storage
+      .from("couvertures")
+      .upload(nomFichier, fichierCouverture);
+
+  if (uploadError) {
+    console.error(uploadError);
+    message.textContent =
+      "Impossible d'envoyer la couverture.";
+    message.className = "error";
+    return;
+  }
+
+  const { data: urlData } =
+    supabaseClient
+      .storage
+      .from("couvertures")
+      .getPublicUrl(nomFichier);
+
+  urlCouverture = urlData.publicUrl;
+}
 
         const livre = {
 
@@ -775,7 +807,7 @@ async function supprimerPersonnage(personnageId) {
               : null,
 
           couverture:
-            document.getElementById("couverture").value || null,
+            urlCouverture,
 
           resume:
             document.getElementById("resume").value || null,
