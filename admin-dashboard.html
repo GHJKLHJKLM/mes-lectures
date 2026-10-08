@@ -296,6 +296,75 @@
 
 </main>
 
+  <div
+  id="personnagesModal"
+  style="
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  "
+>
+
+  <div
+    style="
+      background:white;
+      width:100%;
+      max-width:600px;
+      padding:30px;
+      border-radius:12px;
+    "
+  >
+
+    <h2>Personnages</h2>
+
+    <div id="listePersonnages"></div>
+
+    <hr style="margin:25px 0; border:none; border-top:1px solid #eee7df;">
+
+    <h3>Ajouter un personnage</h3>
+
+    <label for="personnageNom">
+      Nom
+    </label>
+
+    <input
+      id="personnageNom"
+      type="text"
+      placeholder="Nom du personnage"
+    >
+
+    <label for="personnageDescription">
+      Description / rôle
+    </label>
+
+    <textarea
+      id="personnageDescription"
+      placeholder="Description du personnage..."
+    ></textarea>
+
+    <button
+      class="primary"
+      type="button"
+      onclick="ajouterPersonnage()"
+    >
+      Ajouter le personnage
+    </button>
+
+    <button
+      type="button"
+      onclick="fermerPersonnages()"
+      style="margin-top:10px;"
+    >
+      Fermer
+    </button>
+
+  </div>
+
+</div>
 
 <script>
 
