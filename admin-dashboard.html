@@ -223,12 +223,12 @@
       >
 
 
-      <label for="date_lecture">
+      <label for="date_parution">
         Date de lecture
       </label>
 
       <input
-        id="date_lecture"
+        id="date_parution"
         type="date"
       >
 
@@ -593,7 +593,7 @@ async function supprimerPersonnage(personnageId) {
       .from("livres")
       .select("*")
       .eq("user_id", user.id)
-      .order("date_lecture", {
+      .order("date_parution", {
         ascending: false
       });
 
@@ -704,8 +704,8 @@ async function supprimerPersonnage(personnageId) {
           genre:
             document.getElementById("genre").value || null,
 
-          date_lecture:
-            document.getElementById("date_lecture").value || null,
+          date_parution:
+            document.getElementById("date_parution").value || null,
 
           pages:
             document.getElementById("pages").value
