@@ -758,7 +758,7 @@ if (fichierCouverture) {
   const { error: uploadError } =
     await supabaseClient
       .storage
-      .from("couvertures")
+      .from("Couvertures")
       .upload(nomFichier, fichierCouverture);
 
   if (uploadError) {
@@ -772,7 +772,7 @@ if (fichierCouverture) {
   const { data: urlData } =
     supabaseClient
       .storage
-      .from("couvertures")
+      .from("Couvertures")
       .getPublicUrl(nomFichier);
 
   urlCouverture = urlData.publicUrl;
