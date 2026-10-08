@@ -462,13 +462,20 @@ async function gererPersonnages(livreId) {
         <strong>${personnage.nom}</strong>
         <p>${personnage.description || ""}</p>
 
-        <button
-          type="button"
-          class="delete"
-          onclick="supprimerPersonnage(${personnage.id})"
-        >
-          Supprimer
-        </button>
+       <button
+  type="button"
+  onclick="modifierPersonnage(${personnage.id})"
+>
+  Modifier
+</button>
+
+<button
+  type="button"
+  class="delete"
+  onclick="supprimerPersonnage(${personnage.id})"
+>
+  Supprimer
+</button>
       `;
 
       liste.appendChild(bloc);
@@ -546,6 +553,61 @@ async function ajouterPersonnage() {
   await gererPersonnages(livreActuelId);
 }
 
+// =================================================
+// MODIFIER UN PERSONNAGE
+// =================================================
+
+async function modifierPersonnage(personnageId) {
+
+  const { data: personnage, error: lectureError } =
+    await supabaseClient
+      .from("personnages")
+      .select("*")
+      .eq("id", personnageId)
+      .single();
+
+  if (lectureError) {
+    console.error(lectureError);
+    alert("Impossible de charger le personnage.");
+    return;
+  }
+
+  const nouveauNom = prompt(
+    "Nom du personnage :",
+    personnage.nom
+  );
+
+  if (nouveauNom === null) {
+    return;
+  }
+
+  const nouvelleDescription = prompt(
+    "Description / rôle :",
+    personnage.description || ""
+  );
+
+  if (nouvelleDescription === null) {
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("personnages")
+      .update({
+        nom: nouveauNom.trim(),
+        description: nouvelleDescription.trim() || null
+      })
+      .eq("id", personnageId);
+
+  if (error) {
+    console.error(error);
+    alert("Impossible de modifier le personnage.");
+    return;
+  }
+
+  await gererPersonnages(livreActuelId);
+}
+  
   // =================================================
 // SUPPRIMER UN PERSONNAGE
 // =================================================
