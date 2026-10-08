@@ -496,6 +496,48 @@ function fermerPersonnages() {
   livreActuelId = null;
 }
   // =================================================
+// AJOUTER UN PERSONNAGE
+// =================================================
+
+async function ajouterPersonnage() {
+
+  if (!livreActuelId) {
+    alert("Aucun livre sélectionné.");
+    return;
+  }
+
+  const nom =
+    document.getElementById("personnageNom").value.trim();
+
+  const description =
+    document.getElementById("personnageDescription").value.trim();
+
+  if (!nom) {
+    alert("Veuillez renseigner le nom du personnage.");
+    return;
+  }
+
+  const { error } =
+    await supabaseClient
+      .from("personnages")
+      .insert({
+        livre_id: livreActuelId,
+        nom: nom,
+        description: description || null
+      });
+
+  if (error) {
+    console.error(error);
+    alert("Impossible d'ajouter le personnage.");
+    return;
+  }
+
+  document.getElementById("personnageNom").value = "";
+  document.getElementById("personnageDescription").value = "";
+
+  await gererPersonnages(livreActuelId);
+}
+  // =================================================
   // CHARGER LES LIVRES
   // =================================================
 
