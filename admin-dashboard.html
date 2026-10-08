@@ -343,7 +343,39 @@
     return true;
 
   }
+// =================================================
+// GÉRER LES PERSONNAGES
+// =================================================
 
+async function gererPersonnages(livreId) {
+
+  const { data: personnages, error } =
+    await supabaseClient
+      .from("personnages")
+      .select("*")
+      .eq("livre_id", livreId)
+      .order("id");
+
+  if (error) {
+    console.error(error);
+    alert("Impossible de charger les personnages.");
+    return;
+  }
+
+  let message = "Personnages actuels :\n\n";
+
+  if (personnages.length === 0) {
+    message += "Aucun personnage pour le moment.\n";
+  } else {
+    personnages.forEach((personnage, index) => {
+      message +=
+        `${index + 1}. ${personnage.nom}\n` +
+        `${personnage.description || ""}\n\n`;
+    });
+  }
+
+  alert(message);
+}
 
   // =================================================
   // CHARGER LES LIVRES
