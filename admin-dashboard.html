@@ -362,21 +362,28 @@ async function gererPersonnages(livreId) {
     return;
   }
 
-  let message = "Personnages actuels :\n\n";
+  let texte =
+    "GESTION DES PERSONNAGES\n\n";
 
   if (personnages.length === 0) {
-    message += "Aucun personnage pour le moment.\n";
+    texte += "Aucun personnage pour le moment.\n\n";
   } else {
+
     personnages.forEach((personnage, index) => {
-      message +=
+
+      texte +=
         `${index + 1}. ${personnage.nom}\n` +
-        `${personnage.description || ""}\n\n`;
+        `${personnage.description || "Aucune description"}\n\n`;
+
     });
+
   }
 
-  alert(message);
-}
+  texte +=
+    "Pour l'instant, cette fenêtre permet seulement de consulter les personnages.";
 
+  alert(texte);
+}
   // =================================================
   // CHARGER LES LIVRES
   // =================================================
