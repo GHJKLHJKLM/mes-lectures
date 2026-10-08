@@ -21,7 +21,7 @@
     }
 
     header {
-      padding: 60px 20px 40px;
+      padding: 55px 20px 40px;
       text-align: center;
       background: #e8dfd2;
     }
@@ -47,7 +47,7 @@
     .search {
       display: flex;
       gap: 12px;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
     }
 
     .search input,
@@ -74,6 +74,13 @@
       border-radius: 12px;
       overflow: hidden;
       box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .book:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.10);
     }
 
     .cover {
@@ -112,7 +119,104 @@
       color: #756a60;
     }
 
-    @media (max-width: 650px) {
+    .hidden {
+      display: none;
+    }
+
+    /* PAGE DÉTAIL */
+
+    .back-button {
+      display: inline-block;
+      margin-bottom: 30px;
+      color: #5d5146;
+      text-decoration: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .back-button:hover {
+      text-decoration: underline;
+    }
+
+    .detail {
+      background: white;
+      border-radius: 14px;
+      padding: 35px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    .detail-top {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .detail-cover {
+      width: 100%;
+      max-height: 430px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .detail h1 {
+      font-size: 42px;
+      font-weight: normal;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+
+    .detail-author {
+      font-size: 21px;
+      color: #756a60;
+      margin-bottom: 25px;
+    }
+
+    .info {
+      color: #62584f;
+      line-height: 1.8;
+      margin-bottom: 25px;
+    }
+
+    .section {
+      margin-top: 35px;
+    }
+
+    .section h2 {
+      font-size: 27px;
+      font-weight: normal;
+      border-bottom: 1px solid #ddd3c8;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+
+    .summary {
+      line-height: 1.8;
+      white-space: pre-line;
+    }
+
+    .character {
+      padding: 18px 0;
+      border-bottom: 1px solid #eee7df;
+    }
+
+    .character:last-child {
+      border-bottom: none;
+    }
+
+    .character h3 {
+      margin: 0 0 7px;
+      font-size: 20px;
+    }
+
+    .character p {
+      margin: 0;
+      color: #665c53;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 700px) {
+
       header h1 {
         font-size: 38px;
       }
@@ -120,6 +224,19 @@
       .search {
         flex-direction: column;
       }
+
+      .detail {
+        padding: 22px;
+      }
+
+      .detail-top {
+        grid-template-columns: 1fr;
+      }
+
+      .detail h1 {
+        font-size: 34px;
+      }
+
     }
   </style>
 </head>
@@ -131,9 +248,15 @@
   <p>Les livres que j'ai lus, au fil des pages.</p>
 </header>
 
-<main class="container">
+
+<!-- ========================= -->
+<!-- PAGE BIBLIOTHÈQUE -->
+<!-- ========================= -->
+
+<main id="libraryPage" class="container">
 
   <div class="search">
+
     <input
       type="text"
       id="search"
@@ -143,21 +266,41 @@
     <select id="genre">
       <option value="">Tous les genres</option>
     </select>
+
   </div>
 
   <div id="books" class="books"></div>
 
 </main>
 
+
+<!-- ========================= -->
+<!-- PAGE DÉTAIL DU LIVRE -->
+<!-- ========================= -->
+
+<main id="detailPage" class="container hidden">
+
+  <a class="back-button" onclick="retourBibliotheque()">
+    ← Retour à mes lectures
+  </a>
+
+  <div id="detailContent"></div>
+
+</main>
+
+
 <script>
 
-  // --------------------------------------------------
+  // ==================================================
   // CONNEXION SUPABASE
-  // --------------------------------------------------
+  // ==================================================
 
-  const SUPABASE_URL = "https://cjecagqgpqhzawspqzjs.supabase.co";
+  const SUPABASE_URL =
+    "https://cjecagqgpqhzawspqzjs.supabase.co";
 
-  const SUPABASE_KEY = "sb_publishable_8hwEc6y0qiL-vCtUGZ-XVA_Z-SSQKc9";
+  const SUPABASE_KEY =
+    "sb_publishable_8hwEc6y0qiL-vCtUGZ-XVA_Z-SSQKc9";
+
 
   const supabaseClient = supabase.createClient(
     SUPABASE_URL,
@@ -165,16 +308,16 @@
   );
 
 
-  // --------------------------------------------------
+  // ==================================================
   // VARIABLES
-  // --------------------------------------------------
+  // ==================================================
 
   let livres = [];
 
 
-  // --------------------------------------------------
-  // CHARGER LES LIVRES
-  // --------------------------------------------------
+  // ==================================================
+  // CHARGEMENT DES LIVRES
+  // ==================================================
 
   async function chargerLivres() {
 
@@ -183,50 +326,69 @@
       .select("*")
       .order("date_lecture", { ascending: false });
 
+
     if (error) {
+
       console.error(error);
 
       document.getElementById("books").innerHTML = `
         <div class="empty">
+
           <h2>Impossible de charger les livres</h2>
-          <p>Vérifie la connexion à Supabase.</p>
+
+          <p>
+            Vérifie la connexion à Supabase.
+          </p>
+
         </div>
       `;
 
       return;
     }
 
+
     livres = data || [];
 
     remplirGenres();
+
     afficherLivres();
 
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
   // GENRES
-  // --------------------------------------------------
+  // ==================================================
 
   function remplirGenres() {
 
-    const select = document.getElementById("genre");
+    const select =
+      document.getElementById("genre");
 
-    const genres = [...new Set(
-      livres
-        .map(livre => livre.genre)
-        .filter(Boolean)
-    )];
+
+    const genres = [
+      ...new Set(
+        livres
+          .map(livre => livre.genre)
+          .filter(Boolean)
+      )
+    ];
+
 
     genres.sort();
 
-    select.innerHTML = `<option value="">Tous les genres</option>`;
+
+    select.innerHTML =
+      `<option value="">Tous les genres</option>`;
+
 
     genres.forEach(genre => {
 
-      const option = document.createElement("option");
+      const option =
+        document.createElement("option");
 
       option.value = genre;
+
       option.textContent = genre;
 
       select.appendChild(option);
@@ -236,36 +398,53 @@
   }
 
 
-  // --------------------------------------------------
-  // AFFICHAGE
-  // --------------------------------------------------
+  // ==================================================
+  // AFFICHAGE DES LIVRES
+  // ==================================================
 
   function afficherLivres() {
 
     const recherche =
-      document.getElementById("search").value
-      .toLowerCase()
-      .trim();
+      document
+        .getElementById("search")
+        .value
+        .toLowerCase()
+        .trim();
+
 
     const genre =
       document.getElementById("genre").value;
 
-    const livresFiltres = livres.filter(livre => {
 
-      const correspondRecherche =
-        !recherche ||
-        livre.titre.toLowerCase().includes(recherche) ||
-        livre.auteur.toLowerCase().includes(recherche);
+    const livresFiltres =
+      livres.filter(livre => {
 
-      const correspondGenre =
-        !genre || livre.genre === genre;
+        const correspondRecherche =
+          !recherche ||
+          livre.titre
+            .toLowerCase()
+            .includes(recherche) ||
+          livre.auteur
+            .toLowerCase()
+            .includes(recherche);
 
-      return correspondRecherche && correspondGenre;
 
-    });
+        const correspondGenre =
+          !genre ||
+          livre.genre === genre;
 
 
-    const container = document.getElementById("books");
+        return (
+          correspondRecherche &&
+          correspondGenre
+        );
+
+      });
+
+
+    const container =
+      document.getElementById("books");
+
 
     container.innerHTML = "";
 
@@ -274,19 +453,25 @@
 
       container.innerHTML = `
         <div class="empty">
+
           <h2>Aucun livre pour le moment</h2>
-          <p>Ta bibliothèque apparaîtra ici.</p>
+
+          <p>
+            Ta bibliothèque apparaîtra ici.
+          </p>
+
         </div>
       `;
 
       return;
-
     }
 
 
     livresFiltres.forEach(livre => {
 
-      const article = document.createElement("article");
+      const article =
+        document.createElement("article");
+
 
       article.className = "book";
 
@@ -297,6 +482,7 @@
 
 
       article.innerHTML = `
+
         <img
           class="cover"
           src="${couverture}"
@@ -318,7 +504,14 @@
           }
 
         </div>
+
       `;
+
+
+      article.addEventListener(
+        "click",
+        () => afficherDetail(livre.id)
+      );
 
 
       container.appendChild(article);
@@ -328,23 +521,248 @@
   }
 
 
-  // --------------------------------------------------
+  // ==================================================
+  // AFFICHER LE DÉTAIL
+  // ==================================================
+
+  async function afficherDetail(id) {
+
+    const livre =
+      livres.find(
+        livre => livre.id === id
+      );
+
+
+    if (!livre) {
+      return;
+    }
+
+
+    const { data: personnages, error } =
+      await supabaseClient
+        .from("personnages")
+        .select("*")
+        .eq("livre_id", id)
+        .order("id");
+
+
+    if (error) {
+
+      console.error(error);
+
+      return;
+    }
+
+
+    document
+      .getElementById("libraryPage")
+      .classList.add("hidden");
+
+
+    document
+      .getElementById("detailPage")
+      .classList.remove("hidden");
+
+
+    const couverture =
+      livre.couverture ||
+      "https://via.placeholder.com/400x600?text=Pas+de+couverture";
+
+
+    let personnagesHTML = "";
+
+
+    if (!personnages || personnages.length === 0) {
+
+      personnagesHTML = `
+        <p>
+          Aucun personnage renseigné pour le moment.
+        </p>
+      `;
+
+    } else {
+
+      personnagesHTML =
+        personnages.map(personnage => `
+
+          <div class="character">
+
+            <h3>
+              ${personnage.nom}
+            </h3>
+
+            <p>
+              ${personnage.description || ""}
+            </p>
+
+          </div>
+
+        `).join("");
+
+    }
+
+
+    document.getElementById("detailContent").innerHTML = `
+
+      <div class="detail">
+
+        <div class="detail-top">
+
+          <div>
+
+            <img
+              class="detail-cover"
+              src="${couverture}"
+              alt="Couverture de ${livre.titre}"
+            >
+
+          </div>
+
+
+          <div>
+
+            <h1>
+              ${livre.titre}
+            </h1>
+
+            <div class="detail-author">
+              ${livre.auteur}
+            </div>
+
+
+            <div class="info">
+
+              ${
+                livre.genre
+                  ? `<strong>Genre :</strong> ${livre.genre}<br>`
+                  : ""
+              }
+
+              ${
+                livre.date_lecture
+                  ? `<strong>Lecture :</strong> ${formaterDate(livre.date_lecture)}<br>`
+                  : ""
+              }
+
+              ${
+                livre.pages
+                  ? `<strong>Pages :</strong> ${livre.pages}`
+                  : ""
+              }
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        ${
+          livre.resume
+            ? `
+              <div class="section">
+
+                <h2>Résumé</h2>
+
+                <div class="summary">
+                  ${livre.resume}
+                </div>
+
+              </div>
+            `
+            : ""
+        }
+
+
+        <div class="section">
+
+          <h2>Personnages</h2>
+
+          ${personnagesHTML}
+
+        </div>
+
+      </div>
+
+    `;
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  }
+
+
+  // ==================================================
+  // RETOUR BIBLIOTHÈQUE
+  // ==================================================
+
+  function retourBibliotheque() {
+
+    document
+      .getElementById("detailPage")
+      .classList.add("hidden");
+
+
+    document
+      .getElementById("libraryPage")
+      .classList.remove("hidden");
+
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  }
+
+
+  // ==================================================
+  // DATE
+  // ==================================================
+
+  function formaterDate(date) {
+
+    const dateObj =
+      new Date(date);
+
+
+    return dateObj.toLocaleDateString(
+      "fr-FR",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }
+    );
+
+  }
+
+
+  // ==================================================
   // RECHERCHE
-  // --------------------------------------------------
+  // ==================================================
 
   document
     .getElementById("search")
-    .addEventListener("input", afficherLivres);
+    .addEventListener(
+      "input",
+      afficherLivres
+    );
 
 
   document
     .getElementById("genre")
-    .addEventListener("change", afficherLivres);
+    .addEventListener(
+      "change",
+      afficherLivres
+    );
 
 
-  // --------------------------------------------------
+  // ==================================================
   // DÉMARRAGE
-  // --------------------------------------------------
+  // ==================================================
 
   chargerLivres();
 
