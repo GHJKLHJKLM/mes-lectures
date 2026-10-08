@@ -545,6 +545,34 @@ async function ajouterPersonnage() {
 
   await gererPersonnages(livreActuelId);
 }
+
+  // =================================================
+// SUPPRIMER UN PERSONNAGE
+// =================================================
+
+async function supprimerPersonnage(personnageId) {
+
+  const confirmation = confirm(
+    "Voulez-vous vraiment supprimer ce personnage ?"
+  );
+
+  if (!confirmation) {
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("personnages")
+    .delete()
+    .eq("id", personnageId);
+
+  if (error) {
+    console.error(error);
+    alert("Impossible de supprimer le personnage.");
+    return;
+  }
+
+  await gererPersonnages(livreActuelId);
+}
   // =================================================
   // CHARGER LES LIVRES
   // =================================================
