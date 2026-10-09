@@ -1,10 +1,13 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Découvrez des livres, leurs résumés et leurs personnages dans One More Chapter, une bibliothèque de lecture personnelle.">
+  <meta name="robots" content="index, follow">
 
-  <title>One more chapter</title>
+  <title>One More Chapter — Bibliothèque de livres</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -61,6 +64,7 @@
 
     .search input {
       flex: 1;
+      min-width: 0;
     }
 
     .books {
@@ -120,10 +124,8 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
-
-    /* PAGE DÉTAIL */
 
     .back-button {
       display: inline-block;
@@ -136,6 +138,28 @@
 
     .back-button:hover {
       text-decoration: underline;
+    }
+
+    .share-button {
+      display: inline-block;
+      margin: 0 0 24px;
+      padding: 10px 16px;
+      border: 1px solid #d2c7ba;
+      border-radius: 8px;
+      background: white;
+      color: #5d5146;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .share-button:hover {
+      background: #f3eee8;
+    }
+
+    .share-status {
+      margin: 0 0 20px;
+      color: #526b48;
+      font-size: 14px;
     }
 
     .detail {
@@ -164,6 +188,7 @@
       font-weight: normal;
       margin-top: 0;
       margin-bottom: 10px;
+      overflow-wrap: anywhere;
     }
 
     .detail-author {
@@ -193,6 +218,7 @@
     .summary {
       line-height: 1.8;
       white-space: pre-line;
+      overflow-wrap: anywhere;
     }
 
     .character {
@@ -213,10 +239,10 @@
       margin: 0;
       color: #665c53;
       line-height: 1.7;
+      white-space: pre-line;
     }
 
     @media (max-width: 700px) {
-
       header h1 {
         font-size: 38px;
       }
@@ -231,12 +257,16 @@
 
       .detail-top {
         grid-template-columns: 1fr;
+        gap: 25px;
+      }
+
+      .detail-cover {
+        max-width: 280px;
       }
 
       .detail h1 {
         font-size: 34px;
       }
-
     }
   </style>
 </head>
@@ -245,42 +275,35 @@
 
 <header>
   <h1>One more chapter</h1>
-  <p>Les livres, les personnages et les surtout les résumés.</p>
+  <p>Les livres, les personnages et les résumés.</p>
 </header>
-
-
-<!-- ========================= -->
-<!-- PAGE BIBLIOTHÈQUE -->
-<!-- ========================= -->
 
 <main id="libraryPage" class="container">
 
   <div class="search">
-
     <input
       type="text"
       id="search"
       placeholder="Rechercher un livre ou un auteur..."
+      aria-label="Rechercher un livre ou un auteur"
     >
 
-    <select id="genre">
+    <select id="genre" aria-label="Filtrer par genre">
       <option value="">Tous les genres</option>
     </select>
-
   </div>
 
   <div id="books" class="books"></div>
 
 </main>
 
-
-<!-- ========================= -->
-<!-- PAGE DÉTAIL DU LIVRE -->
-<!-- ========================= -->
-
 <main id="detailPage" class="container hidden">
 
-  <a class="back-button" onclick="retourBibliotheque()">
+  <a
+    class="back-button"
+    href="./"
+    onclick="retourBibliotheque(); return false;"
+  >
     ← Retour à One more chapter
   </a>
 
@@ -288,12 +311,10 @@
 
 </main>
 
-
 <script>
-
-  // ==================================================
+  // ================================================
   // CONNEXION SUPABASE
-  // ==================================================
+  // ================================================
 
   const SUPABASE_URL =
     "https://cjecagqgpqhzawspqzjs.supabase.co";
@@ -301,70 +322,75 @@
   const SUPABASE_KEY =
     "sb_publishable_8hwEc6y0qiL-vCtUGZ-XVA_Z-SSQKc9";
 
-
   const supabaseClient = supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
   );
 
-
-  // ==================================================
+  // ================================================
   // VARIABLES
-  // ==================================================
+  // ================================================
 
   let livres = [];
+  let demandeDetail = 0;
 
+  const libraryPage = document.getElementById("libraryPage");
+  const detailPage = document.getElementById("detailPage");
+  const detailContent = document.getElementById("detailContent");
 
-  // ==================================================
+  // ================================================
+  // SÉCURISER L'AFFICHAGE DU TEXTE
+  // ================================================
+
+  function echapperHTML(valeur) {
+    return String(valeur ?? "").replace(/[&<>"']/g, caractere => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[caractere]);
+  }
+
+  // ================================================
   // CHARGEMENT DES LIVRES
-  // ==================================================
+  // ================================================
 
   async function chargerLivres() {
-
     const { data, error } = await supabaseClient
       .from("livres")
       .select("*")
       .order("date_parution", { ascending: false });
 
-
     if (error) {
-
       console.error(error);
 
       document.getElementById("books").innerHTML = `
         <div class="empty">
-
           <h2>Impossible de charger les livres</h2>
-
-          <p>
-            Vérifie la connexion à Supabase.
-          </p>
-
+          <p>Vérifie la connexion à Supabase.</p>
         </div>
       `;
-
       return;
     }
-
 
     livres = data || [];
 
     remplirGenres();
-
     afficherLivres();
 
+    // Ouvre directement la fiche si l'adresse contient #livre-ID.
+    naviguerDepuisAdresse();
   }
 
-
-  // ==================================================
+  // ================================================
   // GENRES
-  // ==================================================
+  // ================================================
 
   function remplirGenres() {
+    const select = document.getElementById("genre");
 
-    const select =
-      document.getElementById("genre");
-
+    const genreActuel = select.value;
 
     const genres = [
       ...new Set(
@@ -372,400 +398,371 @@
           .map(livre => livre.genre)
           .filter(Boolean)
       )
-    ];
-
-
-    genres.sort();
-
+    ].sort();
 
     select.innerHTML =
-      `<option value="">Tous les genres</option>`;
-
+      '<option value="">Tous les genres</option>';
 
     genres.forEach(genre => {
-
-      const option =
-        document.createElement("option");
-
+      const option = document.createElement("option");
       option.value = genre;
-
       option.textContent = genre;
-
       select.appendChild(option);
-
     });
 
+    select.value = genres.includes(genreActuel)
+      ? genreActuel
+      : "";
   }
 
-
-  // ==================================================
-  // AFFICHAGE DES LIVRES
-  // ==================================================
+  // ================================================
+  // AFFICHAGE DE LA BIBLIOTHÈQUE
+  // ================================================
 
   function afficherLivres() {
+    const recherche = document
+      .getElementById("search")
+      .value
+      .toLowerCase()
+      .trim();
 
-    const recherche =
-      document
-        .getElementById("search")
-        .value
-        .toLowerCase()
-        .trim();
+    const genre = document.getElementById("genre").value;
 
+    const livresFiltres = livres.filter(livre => {
+      const titre = String(livre.titre || "").toLowerCase();
+      const auteur = String(livre.auteur || "").toLowerCase();
 
-    const genre =
-      document.getElementById("genre").value;
+      const correspondRecherche =
+        !recherche ||
+        titre.includes(recherche) ||
+        auteur.includes(recherche);
 
+      const correspondGenre =
+        !genre || livre.genre === genre;
 
-    const livresFiltres =
-      livres.filter(livre => {
+      return correspondRecherche && correspondGenre;
+    });
 
-        const correspondRecherche =
-          !recherche ||
-          livre.titre
-            .toLowerCase()
-            .includes(recherche) ||
-          livre.auteur
-            .toLowerCase()
-            .includes(recherche);
-
-
-        const correspondGenre =
-          !genre ||
-          livre.genre === genre;
-
-
-        return (
-          correspondRecherche &&
-          correspondGenre
-        );
-
-      });
-
-
-    const container =
-      document.getElementById("books");
-
-
+    const container = document.getElementById("books");
     container.innerHTML = "";
 
-
     if (livresFiltres.length === 0) {
-
       container.innerHTML = `
         <div class="empty">
-
-          <h2>Aucun livre pour le moment</h2>
-
-          <p>
-            Ta bibliothèque apparaîtra ici.
-          </p>
-
+          <h2>Aucun livre trouvé</h2>
+          <p>Essaie une autre recherche ou un autre genre.</p>
         </div>
       `;
-
       return;
     }
 
-
     livresFiltres.forEach(livre => {
-
-      const article =
-        document.createElement("article");
-
-
+      const article = document.createElement("article");
       article.className = "book";
+      article.tabIndex = 0;
+      article.setAttribute("role", "link");
+      article.setAttribute(
+        "aria-label",
+        "Voir la fiche de " + String(livre.titre || "ce livre")
+      );
 
-
-      const couverture =
+      const couverture = echapperHTML(
         livre.couverture ||
-        "https://via.placeholder.com/400x600?text=Pas+de+couverture";
-
+        "https://placehold.co/400x600?text=Pas+de+couverture"
+      );
 
       article.innerHTML = `
-
         <img
           class="cover"
           src="${couverture}"
-          alt="Couverture de ${livre.titre}"
+          alt="Couverture de ${echapperHTML(livre.titre)}"
+          loading="lazy"
         >
 
         <div class="book-content">
-
-          <h2>${livre.titre}</h2>
+          <h2>${echapperHTML(livre.titre)}</h2>
 
           <div class="author">
-            ${livre.auteur}
+            ${echapperHTML(livre.auteur)}
           </div>
 
           ${
             livre.genre
-              ? `<span class="genre">${livre.genre}</span>`
+              ? `<span class="genre">${echapperHTML(livre.genre)}</span>`
               : ""
           }
-
         </div>
-
       `;
 
+      article.addEventListener("click", () => {
+        ouvrirLienLivre(livre.id);
+      });
 
-      article.addEventListener(
-        "click",
-        () => afficherDetail(livre.id)
-      );
-
+      article.addEventListener("keydown", evenement => {
+        if (evenement.key === "Enter" || evenement.key === " ") {
+          evenement.preventDefault();
+          ouvrirLienLivre(livre.id);
+        }
+      });
 
       container.appendChild(article);
-
     });
-
   }
 
+  // ================================================
+  // LIENS DIRECTS DES LIVRES
+  // Exemple : #livre-12
+  // ================================================
 
-  // ==================================================
-  // AFFICHER LE DÉTAIL
-  // ==================================================
+  function ouvrirLienLivre(id) {
+    const idNumerique = Number(id);
+
+    if (!Number.isSafeInteger(idNumerique) || idNumerique <= 0) {
+      return;
+    }
+
+    const nouveauHash = "#livre-" + idNumerique;
+
+    if (window.location.hash === nouveauHash) {
+      afficherDetail(idNumerique);
+    } else {
+      window.location.hash = nouveauHash;
+    }
+  }
+
+  function naviguerDepuisAdresse() {
+    const correspondance = window.location.hash.match(/^#livre-(\d+)$/);
+
+    if (correspondance) {
+      const id = Number(correspondance[1]);
+
+      if (Number.isSafeInteger(id)) {
+        afficherDetail(id);
+        return;
+      }
+    }
+
+    afficherBibliotheque();
+  }
+
+  window.addEventListener("hashchange", naviguerDepuisAdresse);
+
+  // ================================================
+  // AFFICHER LE DÉTAIL D'UN LIVRE
+  // ================================================
 
   async function afficherDetail(id) {
-
-    const livre =
-      livres.find(
-        livre => livre.id === id
-      );
-
+    const livre = livres.find(
+      element => String(element.id) === String(id)
+    );
 
     if (!livre) {
+      afficherBibliotheque();
+
+      detailContent.innerHTML = `
+        <div class="empty">
+          <h2>Livre introuvable</h2>
+          <p>Ce livre n'existe pas ou n'est plus disponible.</p>
+        </div>
+      `;
+      detailPage.classList.remove("hidden");
+      libraryPage.classList.add("hidden");
       return;
     }
 
+    const numeroDemande = ++demandeDetail;
 
-    const { data: personnages, error } =
-      await supabaseClient
-        .from("personnages")
-        .select("*")
-        .eq("livre_id", id)
-        .order("id");
+    libraryPage.classList.add("hidden");
+    detailPage.classList.remove("hidden");
 
+    detailContent.innerHTML = `
+      <div class="empty">Chargement de la fiche...</div>
+    `;
+
+    const { data: personnages, error } = await supabaseClient
+      .from("personnages")
+      .select("*")
+      .eq("livre_id", livre.id)
+      .order("id");
+
+    // Évite qu'une ancienne requête remplace une fiche plus récente.
+    if (numeroDemande !== demandeDetail) {
+      return;
+    }
 
     if (error) {
-
       console.error(error);
 
+      detailContent.innerHTML = `
+        <div class="empty">
+          <h2>Impossible de charger les personnages</h2>
+          <p>Réessaie dans quelques instants.</p>
+        </div>
+      `;
       return;
     }
 
-
-    document
-      .getElementById("libraryPage")
-      .classList.add("hidden");
-
-
-    document
-      .getElementById("detailPage")
-      .classList.remove("hidden");
-
-
-    const couverture =
+    const couverture = echapperHTML(
       livre.couverture ||
-      "https://via.placeholder.com/400x600?text=Pas+de+couverture";
+      "https://placehold.co/400x600?text=Pas+de+couverture"
+    );
 
+    const personnagesHTML =
+      personnages && personnages.length
+        ? personnages.map(personnage => `
+            <div class="character">
+              <h3>${echapperHTML(personnage.nom)}</h3>
+              <p>${echapperHTML(personnage.description || "")}</p>
+            </div>
+          `).join("")
+        : "<p>Aucun personnage renseigné pour le moment.</p>";
 
-    let personnagesHTML = "";
+    const urlFiche = window.location.href;
 
-
-    if (!personnages || personnages.length === 0) {
-
-      personnagesHTML = `
-        <p>
-          Aucun personnage renseigné pour le moment.
-        </p>
-      `;
-
-    } else {
-
-      personnagesHTML =
-        personnages.map(personnage => `
-
-          <div class="character">
-
-            <h3>
-              ${personnage.nom}
-            </h3>
-
-            <p>
-              ${personnage.description || ""}
-            </p>
-
-          </div>
-
-        `).join("");
-
-    }
-
-
-    document.getElementById("detailContent").innerHTML = `
-
-      <div class="detail">
-
+    detailContent.innerHTML = `
+      <article class="detail">
         <div class="detail-top">
-
           <div>
-
             <img
               class="detail-cover"
               src="${couverture}"
-              alt="Couverture de ${livre.titre}"
+              alt="Couverture de ${echapperHTML(livre.titre)}"
             >
-
           </div>
 
-
           <div>
-
-            <h1>
-              ${livre.titre}
-            </h1>
+            <h1>${echapperHTML(livre.titre)}</h1>
 
             <div class="detail-author">
-              ${livre.auteur}
+              ${echapperHTML(livre.auteur)}
             </div>
 
-
             <div class="info">
-
               ${
                 livre.genre
-                  ? `<strong>Genre :</strong> ${livre.genre}<br>`
+                  ? `<strong>Genre :</strong> ${echapperHTML(livre.genre)}<br>`
                   : ""
               }
 
               ${
                 livre.date_parution
-                  ? `<strong>Lecture :</strong> ${formaterDate(livre.date_parution)}<br>`
+                  ? `<strong>Date :</strong> ${formaterDate(livre.date_parution)}`
                   : ""
               }
-
-              ${
-                livre.pages
-                  ? `<strong>Pages :</strong> ${livre.pages}`
-                  : ""
-              }
-
             </div>
-
           </div>
-
         </div>
 
+        <button class="share-button" id="shareBookButton" type="button">
+          Copier le lien de cette fiche
+        </button>
+
+        <p class="share-status" id="shareStatus" aria-live="polite"></p>
 
         ${
           livre.resume
             ? `
-              <div class="section">
-
+              <section class="section">
                 <h2>Résumé</h2>
-
-                <div class="summary">
-                  ${livre.resume}
-                </div>
-
-              </div>
+                <div class="summary">${echapperHTML(livre.resume)}</div>
+              </section>
             `
             : ""
         }
 
-
-        <div class="section">
-
+        <section class="section">
           <h2>Personnages</h2>
-
           ${personnagesHTML}
-
-        </div>
-
-      </div>
-
+        </section>
+      </article>
     `;
 
+    document
+      .getElementById("shareBookButton")
+      .addEventListener("click", async () => {
+        const statut = document.getElementById("shareStatus");
+
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          statut.textContent = "Lien copié ! Tu peux maintenant le partager.";
+        } catch (erreur) {
+          statut.textContent =
+            "Copie l'adresse affichée dans la barre de ton navigateur pour partager cette fiche.";
+        }
+      });
+
     window.scrollTo({
       top: 0,
       behavior: "smooth"
     });
-
   }
 
+  // ================================================
+  // RETOUR À LA BIBLIOTHÈQUE
+  // ================================================
 
-  // ==================================================
-  // RETOUR BIBLIOTHÈQUE
-  // ==================================================
+  function afficherBibliotheque() {
+    demandeDetail++;
+
+    detailPage.classList.add("hidden");
+    libraryPage.classList.remove("hidden");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
 
   function retourBibliotheque() {
+    if (window.location.hash) {
+      // Supprime le fragment sans provoquer une navigation en double.
+      history.pushState(
+        null,
+        "",
+        window.location.pathname + window.location.search
+      );
+    }
 
-    document
-      .getElementById("detailPage")
-      .classList.add("hidden");
-
-
-    document
-      .getElementById("libraryPage")
-      .classList.remove("hidden");
-
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-
+    afficherBibliotheque();
   }
 
+  window.addEventListener("popstate", naviguerDepuisAdresse);
 
-  // ==================================================
-  // DATE
-  // ==================================================
+  // ================================================
+  // DATES
+  // ================================================
 
   function formaterDate(date) {
+    const dateObj = new Date(date);
 
-    const dateObj =
-      new Date(date);
+    if (Number.isNaN(dateObj.getTime())) {
+      return echapperHTML(date);
+    }
 
-
-    return dateObj.toLocaleDateString(
-      "fr-FR",
-      {
-        day: "numeric",
-        month: "long",
-        year: "numeric"
-      }
-    );
-
+    return dateObj.toLocaleDateString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
   }
 
-
-  // ==================================================
-  // RECHERCHE
-  // ==================================================
+  // ================================================
+  // RECHERCHE ET FILTRES
+  // ================================================
 
   document
     .getElementById("search")
-    .addEventListener(
-      "input",
-      afficherLivres
-    );
-
+    .addEventListener("input", afficherLivres);
 
   document
     .getElementById("genre")
-    .addEventListener(
-      "change",
-      afficherLivres
-    );
+    .addEventListener("change", afficherLivres);
 
-
-  // ==================================================
+  // ================================================
   // DÉMARRAGE
-  // ==================================================
+  // ================================================
 
   chargerLivres();
-
 </script>
 
 </body>
