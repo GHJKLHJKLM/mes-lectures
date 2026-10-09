@@ -1,3 +1,4 @@
+
 name: Generer les fiches des livres
 
 on:
@@ -11,7 +12,6 @@ permissions:
 jobs:
   generer:
     runs-on: ubuntu-latest
-
     steps:
       - name: Recuperer le depot
         uses: actions/checkout@v4
@@ -29,8 +29,9 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
-       - name: Enregistrer les fiches generees
+      - name: Enregistrer les fiches generees
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Generer les fiches des livres"
           file_pattern: "livres/** livres.html sitemap.xml"
+```
