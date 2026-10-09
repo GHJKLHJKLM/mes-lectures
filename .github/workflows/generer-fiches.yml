@@ -34,4 +34,3 @@ jobs:
         with:
           commit_message: "Generer les fiches des livres"
           file_pattern: "livres/** livres.html sitemap.xml"
-```
