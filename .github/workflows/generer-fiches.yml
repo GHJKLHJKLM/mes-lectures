@@ -1,4 +1,3 @@
-
 name: Generer les fiches des livres
 
 on:
@@ -16,6 +15,8 @@ jobs:
     steps:
       - name: Recuperer le depot
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Installer Node.js
         uses: actions/setup-node@v4
@@ -29,11 +30,14 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Enregistrer les fiches generees
-         run: |
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add livres livres.html sitemap.xml
-          git diff --cached --quiet && exit 0
+          if git diff --cached --quiet; then
+            echo "Aucune modification."
+            exit 0
+          fi
           git commit -m "Generer les fiches des livres"
           git pull --rebase origin main
           git push origin HEAD:main
